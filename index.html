@@ -8,8 +8,7 @@
 <section class="panel"><h2>01 · Dein Foto</h2><div class="photo"><div id="placeholder">📷<br><br>Wähle ein Foto aus deiner Galerie<br>oder nimm direkt eines auf.</div><img id="preview" alt="Foto-Vorschau"></div><div class="actions"><label class="filebtn" for="gallery">＋ Galerie</label><label class="filebtn" for="camera">◎ Kamera</label><button id="remove">Entfernen</button></div><input id="gallery" type="file" accept="image/*" hidden><input id="camera" type="file" accept="image/*" capture="environment" hidden><p class="note">Das Foto wird nur lokal in dieser Seite angezeigt. Zum Bearbeiten bitte in ChatGPT selbst als Bild anhängen.</p></section>
 <section class="panel"><h2>02 · Look auswählen</h2><div class="grid" id="effects">
 <button class="effect" data-name="Business Portrait">Business Portrait<span>Professionell, natürlich, clean</span></button><button class="effect" data-name="Hollywood Look">Hollywood Look<span>Cinematisch, dramatisches Licht</span></button><button class="effect" data-name="Vogue Magazin">Vogue Magazin<span>Editorial, hochwertig, elegant</span></button><button class="effect" data-name="Freestyle">Freestyle<span>Modern, dynamisch, urban</span></button><button class="effect" data-name="Dark & Cinematic">Dark & Cinematic<span>Kontrastreich, atmosphärisch</span></button><button class="effect" data-name="Outdoor Bokeh">Outdoor Bokeh<span>Natürlich, weicher Hintergrund</span></button><button class="effect" data-name="Rockstar">Rockstar<span>Stage-Licht, kraftvoller Look</span></button><button class="effect" data-name="Fantasy">Fantasy<span>Fantasiewelt, kreativ</span></button><button class="effect" data-name="Schwarzweiß">Schwarzweiß<span>Zeitlos, ausdrucksstark</span></button></div></section>
-<section class="panel"><h2>03 · Meine Prompt-Buttons</h2><p class="note">Lege eigene Effekte an. Sie bleiben auf diesem Gerät gespeichert.</p><div class="grid" id="savedEffects"></div><div style="display:grid;gap:9px;margin-top:14px"><input id="effectName" maxlength="32" placeholder="Button-Name, z. B. Mein Studio-Look"><textarea id="effectPrompt" placeholder="Dein eigener Bearbeitungs-Prompt ..."></textarea><button class="primary" id="saveEffect">＋ Eigenen Button speichern</button></div><div class="status" id="libraryStatus" aria-live="polite"></div></section>
-<section class="panel"><h2>04 · Eigener Prompt</h2><textarea id="custom" placeholder="Beschreibe deinen gewünschten Look ..."></textarea><div class="actions"><button class="primary" id="build">Prompt erstellen</button><button id="copy">Prompt kopieren</button><button class="primary" id="sendChatGPT">Foto + Prompt teilen ↗</button><button id="open">ChatGPT öffnen</button></div><div class="status" id="status" aria-live="polite"></div></section>
+<section class="panel"><h2>03 · Eigener Prompt</h2><textarea id="custom" placeholder="Beschreibe deinen gewünschten Look ..."></textarea><div class="actions"><button class="primary" id="build">Prompt erstellen</button><button id="copy">Prompt kopieren</button><button class="primary" id="sendChatGPT">Foto + Prompt teilen ↗</button><button id="open">ChatGPT öffnen</button></div><div class="status" id="status" aria-live="polite"></div></section>
 <section class="panel"><h2>Dein fertiger Prompt</h2><div class="result" id="result">Wähle oben einen Look oder schreibe deinen eigenen Prompt.</div><p class="note">Standard: Gesichtszüge, Identität, Frisur, Hautstruktur und natürliche Proportionen möglichst originalgetreu bewahren. Keine Beauty-Retusche oder Veränderung der Person.</p></section><footer>JENS AI PHOTO STUDIO · Lokaler Prompt-Assistent · Keine API-Kosten</footer></main>
 <script>
 const $=id=>document.getElementById(id);let selected="",currentPrompt="",selectedFile=null;const identity=" Bewahre die Identität der Person strikt: Gesichtszüge, Augen, Nase, Mund, Gesichtsform, Frisur, Hautton, Hautstruktur und Körperproportionen möglichst unverändert und realistisch. Keine Beauty-Retusche, keine Verjüngung und keine künstliche Gesichtsveränderung. Verändere nur Licht, Hintergrund, Farblook und Inszenierung. Das Ergebnis soll hochwertig und fotorealistisch wirken.";
@@ -39,28 +38,4 @@ $("sendChatGPT").onclick=async()=>{
 };
 $("open").onclick=()=>{if(!currentPrompt)build();window.open("https://chatgpt.com/","_blank","noopener")};
 
-// Eigene Prompt-Buttons bleiben lokal auf diesem Gerät gespeichert.
-const STORAGE_KEY="jens-ai-photo-studio-prompts-v1";
-function getSaved(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]")}catch(e){return []}}
-function renderSaved(){
- const wrap=$("savedEffects");wrap.innerHTML="";const items=getSaved();
- if(!items.length){wrap.innerHTML='<p class="note">Noch keine eigenen Buttons gespeichert.</p>';return}
- items.forEach((item,index)=>{
-  const btn=document.createElement("button");btn.className="custom-effect";
-  const title=document.createElement("strong");title.textContent=item.name;
-  const desc=document.createElement("small");desc.textContent=item.prompt.length>58?item.prompt.slice(0,58)+"…":item.prompt;
-  const del=document.createElement("span");del.className="delete-effect";del.textContent="✕";del.setAttribute("role","button");del.setAttribute("aria-label","Button löschen");
-  btn.append(title,desc,del);
-  btn.addEventListener("click",()=>{selected="";$("custom").value=item.prompt;currentPrompt="Bearbeite das angehängte Foto. "+item.prompt+identity;$("result").textContent=currentPrompt;$("status").textContent="Dein gespeicherter Effekt ist ausgewählt.";document.querySelectorAll(".effect").forEach(b=>b.style.borderColor="#454b57")});
-  del.addEventListener("click",e=>{e.stopPropagation();const next=getSaved();next.splice(index,1);localStorage.setItem(STORAGE_KEY,JSON.stringify(next));renderSaved();$("libraryStatus").textContent="Eigener Button gelöscht."});
-  wrap.appendChild(btn);
- });
-}
-$("saveEffect").onclick=()=>{
- const name=$("effectName").value.trim(),prompt=$("effectPrompt").value.trim();
- if(!name||!prompt){$("libraryStatus").textContent="Bitte Button-Namen und Prompt ausfüllen.";return}
- const items=getSaved();if(items.length>=30){$("libraryStatus").textContent="Maximal 30 eigene Buttons möglich.";return}
- items.push({name,prompt});localStorage.setItem(STORAGE_KEY,JSON.stringify(items));$("effectName").value="";$("effectPrompt").value="";renderSaved();$("libraryStatus").textContent="Dein Button wurde auf diesem Gerät gespeichert.";
-};
-renderSaved();
 </script></body></html>
